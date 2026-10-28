@@ -1,0 +1,10 @@
+{
+  "mode": "multiclass",
+  "top_k": 30,
+  "use_smote": false,
+  "n_features": 30,
+  "n_classes": 10,
+  "train_rows": 91579,
+  "val_rows": 16161,
+  "test_rows": 82332
+}
