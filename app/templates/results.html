@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Model Comparison</h2>
+
+{% if metrics %}
+<div class="card shadow-sm mb-4"><div class="card-body">
+    <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+        <thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1-score</th></tr></thead>
+        <tbody>
+        {% for name, m in metrics.items() %}
+        <tr {% if name == 'Ensemble' %}class="table-success fw-bold"{% endif %}>
+            <td>{{ name }}</td>
+            <td>{{ (m.accuracy * 100)|round(2) }}%</td>
+            <td>{{ (m.precision * 100)|round(2) }}%</td>
+            <td>{{ (m.recall * 100)|round(2) }}%</td>
+            <td>{{ (m.f1 * 100)|round(2) }}%</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div></div>
+
+<div class="card shadow-sm"><div class="card-body">
+    <canvas id="chart" height="110"></canvas>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const metrics = {{ metrics|tojson }};
+const names = Object.keys(metrics);
+const colors = ['#0d6efd', '#198754', '#ffc107', '#dc3545'];
+const keys = [['accuracy','Accuracy'],['precision','Precision'],['recall','Recall'],['f1','F1-score']];
+new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+        labels: names,
+        datasets: keys.map((k, i) => ({
+            label: k[1],
+            data: names.map(n => +(metrics[n][k[0]] * 100).toFixed(2)),
+            backgroundColor: colors[i]
+        }))
+    },
+    options: { scales: { y: { min: 0, max: 100, title: { display: true, text: '%' } } } }
+});
+</script>
+{% else %}
+<div class="alert alert-info">
+    Results are not available yet. They will appear here once Member A saves the model
+    metrics file (<code>model_metrics.json</code>) in the <code>app</code> folder.
+</div>
+{% endif %}
+{% endblock %}

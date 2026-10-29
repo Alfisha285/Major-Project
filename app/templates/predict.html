@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Detect Intrusion</h2>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100"><div class="card-body">
+            <h5 class="card-title">Option 1: Manual input</h5>
+            <form method="POST">
+                {% for f in features %}
+                <div class="mb-2">
+                    <label class="form-label mb-0">{{ f.label }}</label>
+                    <input type="text" name="{{ f.name }}" class="form-control"
+                           placeholder="{{ 'number' if f.type == 'number' else 'text' }}" required>
+                </div>
+                {% endfor %}
+                <button class="btn btn-primary mt-2" type="submit">Predict</button>
+            </form>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100"><div class="card-body">
+            <h5 class="card-title">Option 2: Upload CSV</h5>
+            <p class="small text-muted">Required column names (exactly):<br>
+                <code>{% for f in features %}{{ f.name }}{% if not loop.last %}, {% endif %}{% endfor %}</code></p>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="csv_file" accept=".csv" class="form-control mb-2" required>
+                <button class="btn btn-primary" type="submit">Upload and Predict</button>
+            </form>
+            <p class="small text-muted mt-2 mb-0">Maximum file size: 5 MB</p>
+        </div></div>
+    </div>
+</div>
+
+{% if result %}
+<div class="card mt-4 shadow-sm border-{{ 'success' if result.prediction == 'Normal' else 'danger' }}">
+    <div class="card-body text-center">
+        {% if result.prediction == 'Normal' %}
+        <h3 class="text-success">&#9989; Normal traffic</h3>
+        {% else %}
+        <h3 class="text-danger">&#9888; Attack detected: {{ result.prediction }}</h3>
+        {% endif %}
+        <p class="mb-1">Confidence: <b>{{ (result.confidence * 100)|round(1) }}%</b></p>
+        <div class="progress mx-auto" style="max-width:300px">
+            <div class="progress-bar bg-{{ 'success' if result.prediction == 'Normal' else 'danger' }}"
+                 style="width: {{ result.confidence * 100 }}%"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if table %}
+<div class="row text-center mt-4 g-3">
+    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Total rows</div><div class="fs-4">{{ summary.total }}</div></div></div></div>
+    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Normal</div><div class="fs-4 text-success">{{ summary.normal }}</div></div></div></div>
+    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
+        <div class="text-muted small">Attacks</div><div class="fs-4 text-danger">{{ summary.attacks }}</div></div></div></div>
+</div>
+<h5 class="mt-4">Predictions (first 50 rows)</h5>
+<div class="table-responsive bg-white p-2 rounded shadow-sm">{{ table|safe }}</div>
+{% endif %}
+{% endblock %}
