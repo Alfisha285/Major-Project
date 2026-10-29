@@ -1,0 +1,8 @@
+{
+  "models": {
+    "CNN":      {"accuracy": 0.00, "precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "RNN-LSTM": {"accuracy": 0.00, "precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "DNN":      {"accuracy": 0.00, "precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "Ensemble": {"accuracy": 0.00, "precision": 0.00, "recall": 0.00, "f1": 0.00}
+  }
+}
