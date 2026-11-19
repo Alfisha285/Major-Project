@@ -1,63 +1,71 @@
 {% extends "base.html" %}
+{% block title %}Predict{% endblock %}
 {% block content %}
-<h2 class="mb-3">Detect Intrusion</h2>
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100"><div class="card-body">
-            <h5 class="card-title">Option 1: Manual input</h5>
-            <form method="POST">
-                {% for f in features %}
-                <div class="mb-2">
-                    <label class="form-label mb-0">{{ f.label }}</label>
-                    <input type="text" name="{{ f.name }}" class="form-control"
-                           placeholder="{{ 'number' if f.type == 'number' else 'text' }}" required>
-                </div>
-                {% endfor %}
-                <button class="btn btn-primary mt-2" type="submit">Predict</button>
-            </form>
-        </div></div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100"><div class="card-body">
-            <h5 class="card-title">Option 2: Upload CSV</h5>
-            <p class="small text-muted">Required column names (exactly):<br>
-                <code>{% for f in features %}{{ f.name }}{% if not loop.last %}, {% endif %}{% endfor %}</code></p>
-            <form method="POST" enctype="multipart/form-data">
-                <input type="file" name="csv_file" accept=".csv" class="form-control mb-2" required>
-                <button class="btn btn-primary" type="submit">Upload and Predict</button>
-            </form>
-            <p class="small text-muted mt-2 mb-0">Maximum file size: 5 MB</p>
-        </div></div>
-    </div>
-</div>
+<h1>Predict traffic type</h1>
+
+{% if mode == 'mock' %}
+<div class="flash warning">Test mode: predictions come from a fake model, not the trained ensemble.</div>
+{% endif %}
 
 {% if result %}
-<div class="card mt-4 shadow-sm border-{{ 'success' if result.prediction == 'Normal' else 'danger' }}">
-    <div class="card-body text-center">
-        {% if result.prediction == 'Normal' %}
-        <h3 class="text-success">&#9989; Normal traffic</h3>
-        {% else %}
-        <h3 class="text-danger">&#9888; Attack detected: {{ result.prediction }}</h3>
-        {% endif %}
-        <p class="mb-1">Confidence: <b>{{ (result.confidence * 100)|round(1) }}%</b></p>
-        <div class="progress mx-auto" style="max-width:300px">
-            <div class="progress-bar bg-{{ 'success' if result.prediction == 'Normal' else 'danger' }}"
-                 style="width: {{ result.confidence * 100 }}%"></div>
-        </div>
+<div class="card result {{ 'ok' if result.prediction == 'Normal' else 'alert' }}">
+    <h2>{% if result.prediction == 'Normal' %}Normal traffic{% else %}Attack detected: {{ result.prediction }}{% endif %}</h2>
+    <p>Confidence: <strong>{{ '%.1f'|format(result.confidence * 100) }}%</strong></p>
+    <h3>Top probabilities</h3>
+    {% for name, p in result.ranked[:5] %}
+    <div class="bar-row">
+        <span class="bar-label">{{ name }}</span>
+        <div class="bar"><span style="width: {{ '%.1f'|format(p * 100) }}%"></span></div>
+        <span class="bar-value">{{ '%.1f'|format(p * 100) }}%</span>
     </div>
+    {% endfor %}
+    {% if actual %}
+    <p>Actual label in the test file: <strong>{{ actual }}</strong></p>
+    {% endif %}
+    {% if test_accuracy %}
+    <p class="note">This model has an overall accuracy of {{ '%.1f'|format(test_accuracy * 100) }}% on the
+    official test file, so a prediction can be wrong. See the Results page for details.</p>
+    {% endif %}
 </div>
 {% endif %}
 
-{% if table %}
-<div class="row text-center mt-4 g-3">
-    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
-        <div class="text-muted small">Total rows</div><div class="fs-4">{{ summary.total }}</div></div></div></div>
-    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
-        <div class="text-muted small">Normal</div><div class="fs-4 text-success">{{ summary.normal }}</div></div></div></div>
-    <div class="col-4"><div class="card shadow-sm"><div class="card-body">
-        <div class="text-muted small">Attacks</div><div class="fs-4 text-danger">{{ summary.attacks }}</div></div></div></div>
+<div class="card">
+    <h2>1. Enter one record</h2>
+    <p class="note">The first prediction can take a while, because the models are loaded the first time.
+    You can <a href="{{ url_for('predict', sample=1) }}">load a random example from the test file</a>.</p>
+    <form method="post" action="{{ url_for('predict') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="actual" value="{{ actual }}">
+        <div class="grid">
+            {% for s in specs %}
+            <label>{{ s.name }}
+                {% if s.kind == 'categorical' %}
+                <select name="{{ s.name }}" required>
+                    <option value="">choose</option>
+                    {% for c in s.choices %}
+                    <option value="{{ c }}" {{ 'selected' if values.get(s.name) == c else '' }}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" inputmode="decimal" name="{{ s.name }}" required
+                       value="{{ values.get(s.name, '') }}">
+                {% endif %}
+            </label>
+            {% endfor %}
+        </div>
+        <button type="submit" class="button">Predict</button>
+    </form>
 </div>
-<h5 class="mt-4">Predictions (first 50 rows)</h5>
-<div class="table-responsive bg-white p-2 rounded shadow-sm">{{ table|safe }}</div>
-{% endif %}
+
+<div class="card">
+    <h2>2. Upload a CSV file</h2>
+    <p>The file needs a header row with these columns (extra columns are ignored; up to 20,000 rows):</p>
+    <p class="cols">{% for s in specs %}<code>{{ s.name }}</code> {% endfor %}</p>
+    <p class="note">If the file also has an <code>attack_cat</code> column, the page compares the predictions with it.</p>
+    <form method="post" action="{{ url_for('predict_csv') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit" class="button">Upload and predict</button>
+    </form>
+</div>
 {% endblock %}

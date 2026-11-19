@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}CSV predictions{% endblock %}
+{% block content %}
+<h1>CSV predictions</h1>
+<div class="card">
+    <p><strong>{{ n_rows }}</strong> rows were predicted.</p>
+    {% if accuracy is not none %}
+    <p>Accuracy on this file (compared with its <code>attack_cat</code> column):
+    <strong>{{ '%.1f'|format(accuracy * 100) }}%</strong></p>
+    {% endif %}
+    <p>
+        <a class="button" href="{{ url_for('download') }}">Download all predictions (CSV)</a>
+        <a class="button secondary" href="{{ url_for('predict') }}">Back to Predict</a>
+    </p>
+</div>
+
+<div class="card">
+    <h2>Summary</h2>
+    <table>
+        <tr><th>Predicted class</th><th>Rows</th><th>Share</th></tr>
+        {% for name, n, pct in summary %}
+        <tr><td>{{ name }}</td><td>{{ n }}</td><td>{{ '%.1f'|format(pct) }}%</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>First {{ rows|length }} rows</h2>
+    <div class="scroll">
+    <table>
+        <tr><th>Row</th><th>Prediction</th><th>Confidence</th>{% if has_actual %}<th>Actual</th>{% endif %}</tr>
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.row }}</td><td>{{ r.prediction }}</td><td>{{ '%.1f'|format(r.confidence * 100) }}%</td>
+            {% if has_actual %}<td>{{ r.actual }}</td>{% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+{% endblock %}

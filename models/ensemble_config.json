@@ -1,0 +1,24 @@
+{
+  "models": [
+    "dnn",
+    "cnn",
+    "lstm"
+  ],
+  "weights": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "class_names": [
+    "Analysis",
+    "Backdoor",
+    "DoS",
+    "Exploits",
+    "Fuzzers",
+    "Generic",
+    "Normal",
+    "Reconnaissance",
+    "Shellcode",
+    "Worms"
+  ]
+}

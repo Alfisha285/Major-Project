@@ -36,3 +36,15 @@ models/*.weights
 .vscode/
 .DS_Store
 Thumbs.db
+
+app/*.db
+app/instance/
+__pycache__/
+
+.venv_old/
+app/*.db
+app/instance/
+instance/
+*.db
+.venv_old/
+sample500.csv

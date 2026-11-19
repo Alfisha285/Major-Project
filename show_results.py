@@ -12,7 +12,7 @@ METRIC_DIR = ROOT / "models" / "metrics"
 with open(ROOT / "models" / "preprocessing" / "class_names.json") as f:
     names = json.load(f)
 
-for model in ["dnn", "cnn"]:
+for model in ["dnn", "cnn", "lstm", "ensemble"]:
     path = METRIC_DIR / (model + "_metrics.json")
     if not path.is_file():
         print("No metrics file for", model)
